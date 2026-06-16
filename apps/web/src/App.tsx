@@ -516,8 +516,8 @@ export function App() {
   function resultDraftFor(match: Match) {
     return (
       resultDrafts[match.id] ?? {
-        scoreA: match.scoreA !== undefined ? String(match.scoreA) : "1",
-        scoreB: match.scoreB !== undefined ? String(match.scoreB) : "0",
+        scoreA: match.scoreA != null ? String(match.scoreA) : "1",
+        scoreB: match.scoreB != null ? String(match.scoreB) : "0",
         resultType: (match.resultType && match.resultType !== "BYE" ? match.resultType : "A_WIN") as MatchResultType,
         games: formatGameDraft(match)
       }
@@ -1615,7 +1615,7 @@ function formatResult(resultType?: Match["resultType"]): string {
 }
 
 function formatScore(match: Match): string {
-  if (match.scoreA === undefined || match.scoreB === undefined) return "";
+  if (match.scoreA == null || match.scoreB == null) return "";
   return `${match.scoreA}:${match.scoreB}`;
 }
 
