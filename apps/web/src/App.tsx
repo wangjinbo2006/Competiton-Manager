@@ -1,4 +1,19 @@
-import { Activity, Plus, RefreshCcw, Swords, Trophy, Users } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  CalendarDays,
+  DatabaseBackup,
+  FileDown,
+  Home,
+  ListChecks,
+  Plus,
+  RefreshCcw,
+  Settings,
+  Shield,
+  Swords,
+  Trophy,
+  Users
+} from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPostText } from "./api.js";
 import type {
@@ -35,6 +50,21 @@ const emptyPlayerForm = {
   note: "",
   seedRank: ""
 };
+
+type AppView = "overview" | "players" | "tournaments" | "matches" | "standings" | "rankings" | "wcc" | "data" | "backups" | "settings";
+
+const navItems: Array<{ id: AppView; label: string; description: string; icon: React.ReactNode }> = [
+  { id: "overview", label: "概览", description: "项目状态与关键数据", icon: <Home size={18} /> },
+  { id: "players", label: "选手", description: "资料、历史与停用", icon: <Users size={18} /> },
+  { id: "tournaments", label: "赛事", description: "创建赛事和参赛名单", icon: <CalendarDays size={18} /> },
+  { id: "matches", label: "对阵成绩", description: "抽签、赛程与录分", icon: <Swords size={18} /> },
+  { id: "standings", label: "成绩表", description: "赛事排名和交叉表", icon: <ListChecks size={18} /> },
+  { id: "rankings", label: "积分排名", description: "综合、Elo、WCC", icon: <BarChart3 size={18} /> },
+  { id: "wcc", label: "WCC 规则", description: "积分表和衰减", icon: <Trophy size={18} /> },
+  { id: "data", label: "导入导出", description: "CSV 数据交换", icon: <FileDown size={18} /> },
+  { id: "backups", label: "备份", description: "备份、下载与恢复", icon: <DatabaseBackup size={18} /> },
+  { id: "settings", label: "设置", description: "项目和本机管理", icon: <Settings size={18} /> }
+];
 
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -115,11 +145,14 @@ export function App() {
   });
   const [resultDrafts, setResultDrafts] = useState<Record<string, { scoreA: string; scoreB: string; resultType: MatchResultType; games: string }>>({});
   const [message, setMessage] = useState("准备就绪");
+  const [activeView, setActiveView] = useState<AppView>("overview");
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId),
     [projects, selectedProjectId]
   );
+
+  const activeNavItem = navItems.find((item) => item.id === activeView) ?? navItems[0]!;
 
   async function refreshProjects() {
     const nextProjects = await apiGet<Project[]>("/api/projects");
@@ -199,6 +232,10 @@ export function App() {
   useEffect(() => {
     refreshTournament().catch((error: unknown) => setMessage(String(error)));
   }, [selectedTournamentId]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [activeView]);
 
   useEffect(() => {
     if (!selectedTournament) return;
@@ -704,7 +741,7 @@ export function App() {
   );
 
   return (
-    <main className="shell">
+    <main className="shell" data-view={activeView}>
       <aside className="sidebar">
         <div className="brand">
           <Trophy size={28} />
@@ -713,20 +750,10 @@ export function App() {
             <span>本机服务器模式</span>
           </div>
         </div>
-        <button className="primary" onClick={createDemoProject} disabled={!user}>
-          <Plus size={16} /> 新建测试项目
-        </button>
-        <div className="quickForm">
-          <strong>创建项目</strong>
-          <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="项目名称" />
-          <input value={projectSlug} onChange={(event) => setProjectSlug(event.target.value)} placeholder="英文标识" />
-          <button onClick={createProject} disabled={!user || !projectName.trim() || !projectSlug.trim()}>
-            <Plus size={16} /> 创建
-          </button>
-        </div>
         <div className="authBox">
           {user ? (
             <>
+              <span className="eyebrow">管理员</span>
               <strong>{user.username}</strong>
               <button onClick={logout}>退出</button>
             </>
@@ -749,64 +776,169 @@ export function App() {
             ))}
           </select>
         </label>
-        {selectedProject && (
+        <nav className="navList" aria-label="功能导航">
+          {navItems.map((item) => (
+            <button
+              className={activeView === item.id ? "navButton active" : "navButton"}
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+            >
+              {item.icon}
+              <span>
+                <strong>{item.label}</strong>
+                <small>{item.description}</small>
+              </span>
+            </button>
+          ))}
+        </nav>
+        <details className="quickManage" open={!selectedProject}>
+          <summary>
+            <Shield size={16} /> 快速管理
+          </summary>
+          <button className="primary" onClick={createDemoProject} disabled={!user}>
+            <Plus size={16} /> 新建测试项目
+          </button>
           <div className="quickForm">
-            <strong>项目设置</strong>
-            <input value={projectEditForm.name} onChange={(event) => setProjectEditForm({ ...projectEditForm, name: event.target.value })} />
-            <input value={projectEditForm.slug} onChange={(event) => setProjectEditForm({ ...projectEditForm, slug: event.target.value })} />
-            <input
-              value={projectEditForm.defaultElo}
-              onChange={(event) => setProjectEditForm({ ...projectEditForm, defaultElo: event.target.value })}
-              placeholder="默认 Elo"
-            />
-            <input
-              value={projectEditForm.eloKFactor}
-              onChange={(event) => setProjectEditForm({ ...projectEditForm, eloKFactor: event.target.value })}
-              placeholder="Elo K 值"
-            />
-            <label className="checkLine">
-              <input
-                type="checkbox"
-                checked={projectEditForm.eloEnabled}
-                onChange={(event) => setProjectEditForm({ ...projectEditForm, eloEnabled: event.target.checked })}
-              />
-              Elo
-            </label>
-            <label className="checkLine">
-              <input
-                type="checkbox"
-                checked={projectEditForm.wccEnabled}
-                onChange={(event) => setProjectEditForm({ ...projectEditForm, wccEnabled: event.target.checked })}
-              />
-              WCC
-            </label>
-            <button onClick={updateProject} disabled={!user || !projectEditForm.name.trim() || !projectEditForm.slug.trim()}>保存项目</button>
-            <button onClick={recalculateRatings} disabled={!user}>重算积分</button>
+            <strong>创建项目</strong>
+            <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="项目名称" />
+            <input value={projectSlug} onChange={(event) => setProjectSlug(event.target.value)} placeholder="英文标识" />
+            <button onClick={createProject} disabled={!user || !projectName.trim() || !projectSlug.trim()}>
+              <Plus size={16} /> 创建
+            </button>
           </div>
-        )}
+          {selectedProject && (
+            <div className="quickForm">
+              <strong>项目设置</strong>
+              <input value={projectEditForm.name} onChange={(event) => setProjectEditForm({ ...projectEditForm, name: event.target.value })} />
+              <input value={projectEditForm.slug} onChange={(event) => setProjectEditForm({ ...projectEditForm, slug: event.target.value })} />
+              <input
+                value={projectEditForm.defaultElo}
+                onChange={(event) => setProjectEditForm({ ...projectEditForm, defaultElo: event.target.value })}
+                placeholder="默认 Elo"
+              />
+              <input
+                value={projectEditForm.eloKFactor}
+                onChange={(event) => setProjectEditForm({ ...projectEditForm, eloKFactor: event.target.value })}
+                placeholder="Elo K 值"
+              />
+              <label className="checkLine">
+                <input
+                  type="checkbox"
+                  checked={projectEditForm.eloEnabled}
+                  onChange={(event) => setProjectEditForm({ ...projectEditForm, eloEnabled: event.target.checked })}
+                />
+                Elo
+              </label>
+              <label className="checkLine">
+                <input
+                  type="checkbox"
+                  checked={projectEditForm.wccEnabled}
+                  onChange={(event) => setProjectEditForm({ ...projectEditForm, wccEnabled: event.target.checked })}
+                />
+                WCC
+              </label>
+              <button onClick={updateProject} disabled={!user || !projectEditForm.name.trim() || !projectEditForm.slug.trim()}>保存项目</button>
+              <button onClick={recalculateRatings} disabled={!user}>重算积分</button>
+            </div>
+          )}
+        </details>
         <p className="status">{message}</p>
       </aside>
 
       <section className="content">
         <header className="topbar">
           <div>
-            <span className="eyebrow">项目概览</span>
-            <h1>{selectedProject?.name ?? "还没有项目"}</h1>
+            <span className="eyebrow">{selectedProject?.name ?? "还没有项目"}</span>
+            <h1>{activeNavItem.label}</h1>
+            <p>{activeNavItem.description}</p>
           </div>
-          <button onClick={() => refreshProjectData()}>
-            <RefreshCcw size={16} /> 刷新
-          </button>
-          <button onClick={createBackup} disabled={!user}>备份</button>
+          <div className="topbarActions">
+            <button onClick={() => refreshProjectData()}>
+              <RefreshCcw size={16} /> 刷新
+            </button>
+            <button onClick={createBackup} disabled={!user}>备份</button>
+          </div>
         </header>
 
-        <section className="metrics">
+        <section className="metrics page page--overview">
           <Metric icon={<Users size={20} />} label="选手" value={players.length} />
           <Metric icon={<Swords size={20} />} label="赛事" value={tournaments.length} />
           <Metric icon={<Activity size={20} />} label="最高 Elo" value={players[0]?.currentElo ?? "-"} />
         </section>
 
+        <section className="panel page page--overview">
+          <div className="panelHeader">
+            <h2>工作台</h2>
+            <span>{user ? `已登录 ${user.username}` : initialized ? "未登录" : "需要初始化"}</span>
+          </div>
+          <div className="dashboardGrid">
+            <button onClick={() => setActiveView("players")}>管理选手</button>
+            <button onClick={() => setActiveView("tournaments")}>创建赛事</button>
+            <button onClick={() => setActiveView("matches")} disabled={!selectedTournamentId}>录入成绩</button>
+            <button onClick={() => setActiveView("rankings")}>查看排名</button>
+          </div>
+        </section>
+
+        <section className="panel page page--settings">
+          <div className="panelHeader">
+            <h2>项目与本机设置</h2>
+            <button className="primary" onClick={createDemoProject} disabled={!user}>
+              <Plus size={16} /> 新建测试项目
+            </button>
+          </div>
+          <div className="settingsLayout">
+            <div className="settingsBlock">
+              <h3>创建项目</h3>
+              <div className="formGrid">
+                <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="项目名称" />
+                <input value={projectSlug} onChange={(event) => setProjectSlug(event.target.value)} placeholder="英文标识" />
+                <button onClick={createProject} disabled={!user || !projectName.trim() || !projectSlug.trim()}>
+                  <Plus size={16} /> 创建
+                </button>
+              </div>
+            </div>
+            {selectedProject && (
+              <div className="settingsBlock">
+                <h3>当前项目</h3>
+                <div className="formGrid">
+                  <input value={projectEditForm.name} onChange={(event) => setProjectEditForm({ ...projectEditForm, name: event.target.value })} />
+                  <input value={projectEditForm.slug} onChange={(event) => setProjectEditForm({ ...projectEditForm, slug: event.target.value })} />
+                  <input
+                    value={projectEditForm.defaultElo}
+                    onChange={(event) => setProjectEditForm({ ...projectEditForm, defaultElo: event.target.value })}
+                    placeholder="默认 Elo"
+                  />
+                  <input
+                    value={projectEditForm.eloKFactor}
+                    onChange={(event) => setProjectEditForm({ ...projectEditForm, eloKFactor: event.target.value })}
+                    placeholder="Elo K 值"
+                  />
+                  <label className="checkLine">
+                    <input
+                      type="checkbox"
+                      checked={projectEditForm.eloEnabled}
+                      onChange={(event) => setProjectEditForm({ ...projectEditForm, eloEnabled: event.target.checked })}
+                    />
+                    Elo
+                  </label>
+                  <label className="checkLine">
+                    <input
+                      type="checkbox"
+                      checked={projectEditForm.wccEnabled}
+                      onChange={(event) => setProjectEditForm({ ...projectEditForm, wccEnabled: event.target.checked })}
+                    />
+                    WCC
+                  </label>
+                  <button onClick={updateProject} disabled={!user || !projectEditForm.name.trim() || !projectEditForm.slug.trim()}>保存项目</button>
+                  <button onClick={recalculateRatings} disabled={!user}>重算积分</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
         <div className="grid">
-          <section className="panel">
+          <section className="panel page page--players">
             <div className="panelHeader">
               <h2>选手</h2>
               <button onClick={addPlayer} disabled={!selectedProjectId || !user}>
@@ -971,7 +1103,7 @@ export function App() {
             </div>
           </section>
 
-          <section className="panel">
+          <section className="panel page page--tournaments">
             <div className="panelHeader">
               <h2>赛事</h2>
               <button onClick={createTournament} disabled={!selectedProjectId || !user}>
@@ -1187,7 +1319,7 @@ export function App() {
           </section>
         </div>
 
-        <section className="panel">
+        <section className="panel page page--wcc">
           <div className="panelHeader">
             <h2>WCC 规则</h2>
             <button onClick={createWccRule} disabled={!selectedProjectId || !user || !wccRuleForm.name.trim()}>
@@ -1240,7 +1372,7 @@ export function App() {
         </section>
 
         <div className="grid">
-          <section className="panel">
+          <section className="panel page page--data">
             <div className="panelHeader">
               <h2>导入导出</h2>
               <div className="actions">
@@ -1258,7 +1390,7 @@ export function App() {
             </button>
           </section>
 
-          <section className="panel">
+          <section className="panel page page--backups">
             <div className="panelHeader">
               <h2>备份</h2>
               <button onClick={createBackup} disabled={!user}>创建备份</button>
@@ -1278,7 +1410,7 @@ export function App() {
           </section>
         </div>
 
-        <section className="panel">
+        <section className="panel page page--matches">
           <div className="panelHeader">
             <h2>对阵与成绩</h2>
             <div className="actions">
@@ -1371,7 +1503,7 @@ export function App() {
         </section>
 
         {bracketView && (
-          <section className="panel">
+          <section className="panel page page--matches">
             <div className="panelHeader">
               <h2>淘汰签表</h2>
               <span>{bracketView.rounds.length} 轮</span>
@@ -1405,7 +1537,7 @@ export function App() {
           </section>
         )}
 
-        <section className="panel">
+        <section className="panel page page--standings">
           <div className="panelHeader">
             <h2>成绩表</h2>
             <span>{standings.length} 人</span>
@@ -1424,7 +1556,7 @@ export function App() {
         </section>
 
         {crosstable && (
-          <section className="panel">
+          <section className="panel page page--standings">
             <div className="panelHeader">
               <h2>循环交叉表</h2>
               <span>{crosstable.rows.length} 人</span>
@@ -1459,7 +1591,7 @@ export function App() {
         )}
 
         <div className="grid">
-          <section className="panel">
+          <section className="panel page page--rankings">
             <div className="panelHeader">
               <h2>综合排名</h2>
               <span>{combinedRankings.length} 人</span>
@@ -1476,7 +1608,7 @@ export function App() {
             </div>
           </section>
 
-          <section className="panel">
+          <section className="panel page page--rankings">
             <div className="panelHeader">
               <h2>Elo 排名</h2>
               <span>{eloRankings.length} 人</span>
@@ -1493,7 +1625,7 @@ export function App() {
             </div>
           </section>
 
-          <section className="panel">
+          <section className="panel page page--rankings">
             <div className="panelHeader">
               <h2>WCC 排名</h2>
               <span>{wccRankings.length} 人</span>
