@@ -1,0 +1,29 @@
+{
+  "name": "@competition-manager/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/apps/server/src/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build --workspace @competition-manager/shared && vitest run",
+    "seed": "tsx src/seed.ts",
+    "db:init": "tsx src/scripts/initDb.ts"
+  },
+  "dependencies": {
+    "@competition-manager/shared": "0.1.0",
+    "@fastify/cors": "^11.0.1",
+    "@fastify/static": "^9.1.3",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.4.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}

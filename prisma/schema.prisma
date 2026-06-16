@@ -1,0 +1,390 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION
+  LOCKED
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+  CANCELLED
+}
+
+enum StageFormat {
+  SINGLE_ELIMINATION
+  ROUND_ROBIN
+  SWISS
+  CUP
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchResultType {
+  A_WIN
+  B_WIN
+  DRAW
+  A_WALKOVER
+  B_WALKOVER
+  DOUBLE_WALKOVER
+  BYE
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  CHECKED_IN
+  WITHDRAWN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model Project {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  description    String?
+  defaultElo     Int      @default(1200)
+  eloEnabled     Boolean  @default(true)
+  wccEnabled     Boolean  @default(true)
+  scoringConfig  Json?
+  rankingConfig  Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  players       ProjectPlayer[]
+  tournaments   Tournament[]
+  wccRuleSets   WccRuleSet[]
+  eloHistory    EloRatingHistory[]
+  wccEvents     WccPointEvent[]
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  nickname  String?
+  gender    String?
+  birthDate DateTime?
+  country   String?
+  region    String?
+  club      String?
+  contact   String?
+  avatarUrl String?
+  note      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectPlayers ProjectPlayer[]
+}
+
+model ProjectPlayer {
+  id            String   @id @default(cuid())
+  projectId     String
+  playerId      String
+  displayName   String
+  code          String?
+  seedRank      Int?
+  currentElo    Int      @default(1200)
+  currentWcc    Int      @default(0)
+  matchesPlayed Int      @default(0)
+  wins          Int      @default(0)
+  draws         Int      @default(0)
+  losses        Int      @default(0)
+  active        Boolean  @default(true)
+  joinedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  player  Player  @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  tournamentEntries TournamentParticipant[]
+  eloHistory         EloRatingHistory[]
+  opponentEloHistory EloRatingHistory[]      @relation("OpponentEloHistory")
+  wccEvents          WccPointEvent[]
+
+  @@unique([projectId, playerId])
+  @@unique([projectId, code])
+  @@index([projectId, currentElo])
+  @@index([projectId, currentWcc])
+}
+
+model Tournament {
+  id                  String           @id @default(cuid())
+  projectId           String
+  name                String
+  level               String           @default("WCC_100")
+  format              StageFormat
+  status              TournamentStatus @default(DRAFT)
+  startDate           DateTime?
+  endDate             DateTime?
+  registrationDeadline DateTime?
+  location            String?
+  organizer           String?
+  description         String?
+  eloEnabled          Boolean          @default(true)
+  wccEnabled          Boolean          @default(true)
+  wccRuleSetId        String?
+  rankingRuleSnapshot Json?
+  drawConfig          Json?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  project      Project                 @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  wccRuleSet   WccRuleSet?             @relation(fields: [wccRuleSetId], references: [id], onDelete: SetNull)
+  participants TournamentParticipant[]
+  stages       TournamentStage[]
+  rounds       Round[]
+  matches      Match[]
+  eloHistory   EloRatingHistory[]
+  wccEvents    WccPointEvent[]
+
+  @@index([projectId, status])
+}
+
+model TournamentParticipant {
+  id                String            @id @default(cuid())
+  tournamentId      String
+  projectPlayerId   String
+  seed              Int?
+  registrationStatus ParticipantStatus @default(REGISTERED)
+  checkedIn         Boolean           @default(false)
+  finalRank         Int?
+  finalStandingData Json?
+  wccPointsAwarded  Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  tournament    Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  projectPlayer ProjectPlayer @relation(fields: [projectPlayerId], references: [id], onDelete: Restrict)
+
+  asParticipantA Match[] @relation("ParticipantA")
+  asParticipantB Match[] @relation("ParticipantB")
+  wonMatches     Match[] @relation("MatchWinner")
+
+  @@unique([tournamentId, projectPlayerId])
+  @@index([tournamentId, seed])
+}
+
+model TournamentStage {
+  id                  String           @id @default(cuid())
+  tournamentId        String
+  name                String
+  order               Int
+  format              StageFormat
+  status              TournamentStatus @default(DRAFT)
+  config              Json?
+  rankingRuleSnapshot Json?
+  qualifyRule         Json?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  groups     TournamentGroup[]
+  rounds     Round[]
+  matches    Match[]
+
+  @@unique([tournamentId, order])
+}
+
+model TournamentGroup {
+  id        String   @id @default(cuid())
+  stageId   String
+  name      String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stage   TournamentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  matches Match[]
+
+  @@unique([stageId, order])
+}
+
+model Round {
+  id           String      @id @default(cuid())
+  tournamentId String
+  stageId      String
+  name         String
+  roundNumber  Int
+  status       MatchStatus @default(SCHEDULED)
+  scheduledAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tournament Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  stage      TournamentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  matches    Match[]
+
+  @@unique([stageId, roundNumber])
+}
+
+model Match {
+  id                    String           @id @default(cuid())
+  tournamentId           String
+  stageId                String
+  roundId                String?
+  groupId                String?
+  bracketNodeKey         String?
+  tableNumber            Int?
+  status                 MatchStatus      @default(SCHEDULED)
+  participantAId         String?
+  participantBId         String?
+  scoreA                 Float?
+  scoreB                 Float?
+  winnerParticipantId    String?
+  resultType             MatchResultType?
+  isBye                  Boolean          @default(false)
+  isWalkover             Boolean          @default(false)
+  startsAt               DateTime?
+  finishedAt             DateTime?
+  eloProcessedAt         DateTime?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  tournament   Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  stage        TournamentStage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  round        Round?                 @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  group        TournamentGroup?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  participantA TournamentParticipant? @relation("ParticipantA", fields: [participantAId], references: [id], onDelete: SetNull)
+  participantB TournamentParticipant? @relation("ParticipantB", fields: [participantBId], references: [id], onDelete: SetNull)
+  winner       TournamentParticipant? @relation("MatchWinner", fields: [winnerParticipantId], references: [id], onDelete: SetNull)
+  games        MatchGame[]
+  eloHistory   EloRatingHistory[]
+
+  @@index([tournamentId, status])
+  @@index([stageId, bracketNodeKey])
+}
+
+model MatchGame {
+  id         String   @id @default(cuid())
+  matchId    String
+  gameNumber Int
+  scoreA     Int?
+  scoreB     Int?
+  winnerSide String?
+  detail     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, gameNumber])
+}
+
+model EloRatingHistory {
+  id                      String   @id @default(cuid())
+  projectId               String
+  tournamentId            String?
+  matchId                 String?
+  projectPlayerId         String
+  opponentProjectPlayerId String?
+  ratingBefore            Int
+  ratingAfter             Int
+  delta                   Int
+  kFactor                 Int
+  expectedScore           Float
+  actualScore             Float
+  reason                  String?
+  createdAt               DateTime @default(now())
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  tournament    Tournament?    @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  match         Match?         @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  projectPlayer ProjectPlayer  @relation(fields: [projectPlayerId], references: [id], onDelete: Restrict)
+  opponent      ProjectPlayer? @relation("OpponentEloHistory", fields: [opponentProjectPlayerId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([projectPlayerId, createdAt])
+}
+
+model WccRuleSet {
+  id           String   @id @default(cuid())
+  projectId    String
+  name         String
+  level        String
+  pointsTable  Json
+  decayType    String   @default("FIXED_EXPIRY")
+  decayConfig  Json?
+  bestOfConfig Json?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  tournaments Tournament[]
+  events      WccPointEvent[]
+
+  @@index([projectId, active])
+}
+
+model WccPointEvent {
+  id              String   @id @default(cuid())
+  projectId       String
+  tournamentId    String
+  projectPlayerId String
+  ruleSetId       String?
+  finalRank       Int
+  achievement     String
+  rawPoints       Int
+  effectiveFrom   DateTime
+  expiresAt       DateTime?
+  decaySnapshot   Json?
+  createdAt       DateTime @default(now())
+
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  tournament    Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  projectPlayer ProjectPlayer @relation(fields: [projectPlayerId], references: [id], onDelete: Restrict)
+  ruleSet       WccRuleSet?   @relation(fields: [ruleSetId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, effectiveFrom])
+  @@index([projectPlayerId, effectiveFrom])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String
+  beforeData  Json?
+  afterData   Json?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model BackupRecord {
+  id        String   @id @default(cuid())
+  fileName  String
+  filePath  String
+  sizeBytes Int?
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,570 @@
+:root {
+  color: #172026;
+  background: #f6f7f4;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+select,
+textarea,
+input {
+  font: inherit;
+}
+
+button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #c8d0ca;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172026;
+  cursor: pointer;
+  padding: 0 12px;
+}
+
+a.buttonLink {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c8d0ca;
+  border-radius: 8px;
+  color: #172026;
+  padding: 0 12px;
+  text-decoration: none;
+}
+
+a.disabledLink {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+button:hover {
+  border-color: #2d6a6a;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+button.primary {
+  border-color: #245b5f;
+  background: #245b5f;
+  color: #ffffff;
+}
+
+select,
+input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #c8d0ca;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0 10px;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid #c8d0ca;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 280px 1fr;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-right: 1px solid #dfe4df;
+  background: #edf0ea;
+  padding: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span,
+.eyebrow,
+.status {
+  color: #66736c;
+  font-size: 0.86rem;
+}
+
+.sidebar label {
+  display: grid;
+  gap: 8px;
+  color: #425047;
+  font-size: 0.92rem;
+}
+
+.authBox {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #d4dbd5;
+  border-bottom: 1px solid #d4dbd5;
+  padding: 14px 0;
+}
+
+.quickForm {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d4dbd5;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.checkLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 28px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  border: 1px solid #dfe4df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.metric svg {
+  grid-row: span 2;
+  color: #245b5f;
+}
+
+.metric span {
+  color: #66736c;
+}
+
+.metric strong {
+  font-size: 1.35rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 20px;
+}
+
+.panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #dfe4df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.actions,
+.tournamentOps,
+.scheduleControls,
+.resultControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scheduleControls input:first-child {
+  width: 64px;
+}
+
+.scheduleControls input[type="datetime-local"] {
+  width: 168px;
+}
+
+.scheduleControls select {
+  width: 92px;
+}
+
+.resultControls input {
+  width: 64px;
+}
+
+.resultControls .gameDraftInput {
+  width: 132px;
+}
+
+.resultControls select {
+  width: 120px;
+}
+
+.opsStack {
+  display: grid;
+  gap: 10px;
+}
+
+.participantList {
+  display: grid;
+  gap: 8px;
+}
+
+.participantRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 84px 92px 110px auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #dfe4df;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.participantRow strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.formGrid.compact {
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+}
+
+.tournamentCreateGrid,
+.tournamentSettingsGrid {
+  grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.7fr) minmax(110px, 0.6fr);
+}
+
+.table,
+.matches {
+  display: grid;
+  gap: 8px;
+}
+
+.row,
+.match,
+.standingRow,
+.ruleRow,
+.backupRow {
+  display: grid;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.playerBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.playerMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: #66736c;
+  font-size: 0.86rem;
+  padding: 0 12px 4px 58px;
+}
+
+.playerMeta span {
+  min-width: 0;
+}
+
+.historyPanel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.historyList {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.historyItem {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(80px, 0.8fr) auto;
+  gap: 8px;
+  color: #66736c;
+  font-size: 0.88rem;
+}
+
+.historyItem span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: #66736c;
+  font-size: 0.88rem;
+}
+
+.row {
+  grid-template-columns: 36px minmax(120px, 1fr) auto auto auto;
+}
+
+.playerEditRow {
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.standingRow {
+  grid-template-columns: 36px 1fr auto auto auto;
+}
+
+.crosstableWrap {
+  overflow-x: auto;
+}
+
+.crosstable {
+  display: grid;
+  min-width: 620px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+}
+
+.crosstableCorner,
+.crosstableHeader,
+.crosstableName,
+.crosstableCell {
+  display: flex;
+  min-height: 42px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #edf0ea;
+  border-bottom: 1px solid #edf0ea;
+  padding: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crosstableName,
+.crosstableCorner {
+  justify-content: flex-start;
+}
+
+.crosstableHeader,
+.crosstableCorner {
+  background: #f6f7f4;
+}
+
+.crosstableCell.result-w {
+  color: #245b5f;
+  font-weight: 700;
+}
+
+.crosstableCell.result-l {
+  color: #9a3412;
+}
+
+.crosstableCell.result-self {
+  color: #9aa39d;
+  background: #fafbf8;
+}
+
+.bracketWrap {
+  overflow-x: auto;
+}
+
+.bracketGrid {
+  display: grid;
+  grid-auto-columns: minmax(220px, 260px);
+  grid-auto-flow: column;
+  gap: 12px;
+  min-width: max-content;
+}
+
+.bracketRound {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.bracketRoundHeader {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+}
+
+.bracketRoundHeader span,
+.bracketNode,
+.bracketStatus {
+  color: #66736c;
+  font-size: 0.82rem;
+}
+
+.bracketMatch {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #edf0ea;
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.bracketSide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 28px;
+}
+
+.bracketSide strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bracketSide.winner {
+  color: #245b5f;
+}
+
+.bracketSide.winner strong {
+  font-weight: 800;
+}
+
+.rankingRow {
+  grid-template-columns: 36px 1fr auto auto;
+}
+
+.backupRow {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.ruleRow {
+  grid-template-columns: minmax(140px, 1fr) auto auto auto auto auto;
+}
+
+.match {
+  grid-template-columns: 120px minmax(100px, 1fr) auto minmax(100px, 1fr) minmax(190px, auto) minmax(90px, auto) minmax(260px, auto);
+}
+
+.match > span,
+.row > span,
+.standingRow > span,
+.rankingRow > span,
+.ruleRow > span,
+.backupRow > span {
+  color: #66736c;
+}
+
+@media (max-width: 900px) {
+  .shell,
+  .grid,
+  .metrics,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #dfe4df;
+  }
+
+  .match {
+    grid-template-columns: 1fr;
+  }
+
+  .historyPanel,
+  .historyItem {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid.compact,
+  .tournamentCreateGrid,
+  .tournamentSettingsGrid,
+  .participantRow,
+  .ruleRow {
+    grid-template-columns: 1fr;
+  }
+
+  .playerMeta {
+    padding-left: 12px;
+  }
+}
