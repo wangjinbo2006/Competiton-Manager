@@ -105,6 +105,7 @@ export function App() {
   const [editingWccRuleId, setEditingWccRuleId] = useState("");
   const [wccRuleForm, setWccRuleForm] = useState({
     name: "WCC 100",
+    level: "WCC_100",
     champion: "100",
     finalist: "65",
     semifinal: "40",
@@ -129,6 +130,7 @@ export function App() {
     groupCount: "2",
     qualifyPerGroup: "2"
   });
+  const [participantAddPlayerId, setParticipantAddPlayerId] = useState("");
   const [tournamentEditForm, setTournamentEditForm] = useState({
     name: "",
     level: "WCC_100",
@@ -153,6 +155,14 @@ export function App() {
   );
 
   const activeNavItem = navItems.find((item) => item.id === activeView) ?? navItems[0]!;
+  const tournamentParticipantIds = useMemo(
+    () => new Set((selectedTournament?.participants ?? []).map((participant) => participant.projectPlayerId)),
+    [selectedTournament?.participants]
+  );
+  const availableTournamentPlayers = useMemo(
+    () => players.filter((player) => player.active !== false && !tournamentParticipantIds.has(player.id)),
+    [players, tournamentParticipantIds]
+  );
 
   async function refreshProjects() {
     const nextProjects = await apiGet<Project[]>("/api/projects");
@@ -476,6 +486,19 @@ export function App() {
     await refreshProjectData();
   }
 
+  async function addPlayerToTournament() {
+    if (!selectedTournamentId || !participantAddPlayerId || !user) return;
+    const seed = (selectedTournament?.participants ?? []).length + 1;
+    await apiPost(`/api/tournaments/${selectedTournamentId}/participants`, {
+      projectPlayerId: participantAddPlayerId,
+      seed
+    });
+    setParticipantAddPlayerId("");
+    setMessage("已添加参赛选手");
+    await refreshTournament();
+    await refreshProjectData();
+  }
+
   async function updateTournamentParticipant(participantId: string, input: { seed?: number | null; checkedIn?: boolean; registrationStatus?: string }) {
     if (!selectedTournamentId || !user) return;
     await apiPatch(`/api/tournaments/${selectedTournamentId}/participants/${participantId}`, input);
@@ -660,7 +683,7 @@ export function App() {
     const decayType = wccRuleForm.decayType === "STEP" ? "STEP" : wccRuleForm.decayType === "LINEAR" ? "LINEAR" : "FIXED_EXPIRY";
     const payload = {
       name: wccRuleForm.name.trim(),
-      level: "WCC_100",
+      level: wccRuleForm.level.trim() || "WCC_100",
       pointsTable: {
         CHAMPION: Number.isFinite(champion) ? champion : 100,
         FINALIST: Number.isFinite(finalist) ? finalist : 65,
@@ -695,6 +718,7 @@ export function App() {
     setEditingWccRuleId(rule.id);
     setWccRuleForm({
       name: rule.name,
+      level: rule.level ?? "WCC_100",
       champion: String(rule.pointsTable.CHAMPION ?? 100),
       finalist: String(rule.pointsTable.FINALIST ?? 65),
       semifinal: String(rule.pointsTable.SEMIFINAL ?? 40),
@@ -941,47 +965,54 @@ export function App() {
           <section className="panel page page--players">
             <div className="panelHeader">
               <h2>选手</h2>
-              <button onClick={addPlayer} disabled={!selectedProjectId || !user}>
-                <Plus size={16} /> 添加
-              </button>
+              <span>{players.length} 人</span>
             </div>
-            <div className="formGrid">
-              <input value={playerForm.name} onChange={(event) => setPlayerForm({ ...playerForm, name: event.target.value })} placeholder="姓名" />
-              <input
-                value={playerForm.displayName}
-                onChange={(event) => setPlayerForm({ ...playerForm, displayName: event.target.value })}
-                placeholder="显示名"
-              />
-              <input value={playerForm.code} onChange={(event) => setPlayerForm({ ...playerForm, code: event.target.value })} placeholder="编号" />
-              <input value={playerForm.nickname} onChange={(event) => setPlayerForm({ ...playerForm, nickname: event.target.value })} placeholder="昵称" />
-              <input value={playerForm.gender} onChange={(event) => setPlayerForm({ ...playerForm, gender: event.target.value })} placeholder="性别" />
-              <input
-                type="date"
-                value={playerForm.birthDate}
-                onChange={(event) => setPlayerForm({ ...playerForm, birthDate: event.target.value })}
-                aria-label="出生日期"
-              />
-              <input value={playerForm.country} onChange={(event) => setPlayerForm({ ...playerForm, country: event.target.value })} placeholder="国家/地区" />
-              <input value={playerForm.region} onChange={(event) => setPlayerForm({ ...playerForm, region: event.target.value })} placeholder="地区/城市" />
-              <input value={playerForm.club} onChange={(event) => setPlayerForm({ ...playerForm, club: event.target.value })} placeholder="队伍/俱乐部" />
-              <input
-                value={playerForm.contact}
-                onChange={(event) => setPlayerForm({ ...playerForm, contact: event.target.value })}
-                placeholder="联系方式"
-              />
-              <input
-                value={playerForm.avatarUrl}
-                onChange={(event) => setPlayerForm({ ...playerForm, avatarUrl: event.target.value })}
-                placeholder="头像链接"
-              />
-              <input
-                value={playerForm.seedRank}
-                onChange={(event) => setPlayerForm({ ...playerForm, seedRank: event.target.value })}
-                placeholder="种子序号"
-              />
-              <input value={playerForm.note} onChange={(event) => setPlayerForm({ ...playerForm, note: event.target.value })} placeholder="备注" />
-            </div>
+            <details className="formDrawer">
+              <summary>
+                <Plus size={16} /> 添加选手
+              </summary>
+              <div className="formGrid">
+                <input value={playerForm.name} onChange={(event) => setPlayerForm({ ...playerForm, name: event.target.value })} placeholder="姓名" />
+                <input
+                  value={playerForm.displayName}
+                  onChange={(event) => setPlayerForm({ ...playerForm, displayName: event.target.value })}
+                  placeholder="显示名"
+                />
+                <input value={playerForm.code} onChange={(event) => setPlayerForm({ ...playerForm, code: event.target.value })} placeholder="编号" />
+                <input value={playerForm.nickname} onChange={(event) => setPlayerForm({ ...playerForm, nickname: event.target.value })} placeholder="昵称" />
+                <input value={playerForm.gender} onChange={(event) => setPlayerForm({ ...playerForm, gender: event.target.value })} placeholder="性别" />
+                <input
+                  type="date"
+                  value={playerForm.birthDate}
+                  onChange={(event) => setPlayerForm({ ...playerForm, birthDate: event.target.value })}
+                  aria-label="出生日期"
+                />
+                <input value={playerForm.country} onChange={(event) => setPlayerForm({ ...playerForm, country: event.target.value })} placeholder="国家/地区" />
+                <input value={playerForm.region} onChange={(event) => setPlayerForm({ ...playerForm, region: event.target.value })} placeholder="地区/城市" />
+                <input value={playerForm.club} onChange={(event) => setPlayerForm({ ...playerForm, club: event.target.value })} placeholder="队伍/俱乐部" />
+                <input
+                  value={playerForm.contact}
+                  onChange={(event) => setPlayerForm({ ...playerForm, contact: event.target.value })}
+                  placeholder="联系方式"
+                />
+                <input
+                  value={playerForm.avatarUrl}
+                  onChange={(event) => setPlayerForm({ ...playerForm, avatarUrl: event.target.value })}
+                  placeholder="头像链接"
+                />
+                <input
+                  value={playerForm.seedRank}
+                  onChange={(event) => setPlayerForm({ ...playerForm, seedRank: event.target.value })}
+                  placeholder="种子序号"
+                />
+                <input value={playerForm.note} onChange={(event) => setPlayerForm({ ...playerForm, note: event.target.value })} placeholder="备注" />
+                <button className="primary" onClick={addPlayer} disabled={!selectedProjectId || !user || !playerForm.name.trim() || !playerForm.displayName.trim()}>
+                  <Plus size={16} /> 保存选手
+                </button>
+              </div>
+            </details>
             <div className="table">
+              {players.length === 0 && <div className="emptyState">还没有选手。先添加选手，或在导入导出页批量导入 CSV。</div>}
               {players.map((player, index) => (
                 <div className="playerBlock" key={player.id}>
                   <div className="row">
@@ -1106,102 +1137,130 @@ export function App() {
           <section className="panel page page--tournaments">
             <div className="panelHeader">
               <h2>赛事</h2>
-              <button onClick={createTournament} disabled={!selectedProjectId || !user}>
+              <span>{tournaments.length} 个赛事</span>
+            </div>
+            <details className="formDrawer">
+              <summary>
                 <Plus size={16} /> 创建赛事
-              </button>
-            </div>
-            <div className="formGrid tournamentCreateGrid">
-              <input
-                value={tournamentForm.name}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, name: event.target.value })}
-                placeholder="赛事名称"
-              />
-              <select
-                value={tournamentForm.format}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, format: event.target.value as TournamentFormat })}
-              >
-                <option value="SINGLE_ELIMINATION">淘汰赛</option>
-                <option value="ROUND_ROBIN">循环赛</option>
-                <option value="SWISS">瑞士轮</option>
-                <option value="CUP">杯赛</option>
-              </select>
-              <input
-                value={tournamentForm.level}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, level: event.target.value })}
-                placeholder="赛事等级"
-              />
-              <input
-                type="datetime-local"
-                value={tournamentForm.startDate}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, startDate: event.target.value })}
-              />
-              <input
-                type="datetime-local"
-                value={tournamentForm.endDate}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, endDate: event.target.value })}
-              />
-              <input
-                type="datetime-local"
-                value={tournamentForm.registrationDeadline}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, registrationDeadline: event.target.value })}
-              />
-              <input
-                value={tournamentForm.location}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, location: event.target.value })}
-                placeholder="地点"
-              />
-              <input
-                value={tournamentForm.organizer}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, organizer: event.target.value })}
-                placeholder="主办方"
-              />
-              <input
-                value={tournamentForm.description}
-                onChange={(event) => setTournamentForm({ ...tournamentForm, description: event.target.value })}
-                placeholder="说明"
-              />
-              {tournamentForm.format === "CUP" && (
-                <>
+              </summary>
+              <div className="formGrid tournamentCreateGrid">
+                <input
+                  value={tournamentForm.name}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, name: event.target.value })}
+                  placeholder="赛事名称"
+                />
+                <select
+                  value={tournamentForm.format}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, format: event.target.value as TournamentFormat })}
+                >
+                  <option value="SINGLE_ELIMINATION">淘汰赛</option>
+                  <option value="ROUND_ROBIN">循环赛</option>
+                  <option value="SWISS">瑞士轮</option>
+                  <option value="CUP">杯赛</option>
+                </select>
+                <input
+                  value={tournamentForm.level}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, level: event.target.value })}
+                  placeholder="赛事等级"
+                />
+                <input
+                  type="datetime-local"
+                  value={tournamentForm.startDate}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, startDate: event.target.value })}
+                />
+                <input
+                  type="datetime-local"
+                  value={tournamentForm.endDate}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, endDate: event.target.value })}
+                />
+                <input
+                  type="datetime-local"
+                  value={tournamentForm.registrationDeadline}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, registrationDeadline: event.target.value })}
+                />
+                <input
+                  value={tournamentForm.location}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, location: event.target.value })}
+                  placeholder="地点"
+                />
+                <input
+                  value={tournamentForm.organizer}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, organizer: event.target.value })}
+                  placeholder="主办方"
+                />
+                <input
+                  value={tournamentForm.description}
+                  onChange={(event) => setTournamentForm({ ...tournamentForm, description: event.target.value })}
+                  placeholder="说明"
+                />
+                {tournamentForm.format === "CUP" && (
+                  <>
+                    <input
+                      value={tournamentForm.groupCount}
+                      onChange={(event) => setTournamentForm({ ...tournamentForm, groupCount: event.target.value })}
+                      placeholder="小组数量"
+                    />
+                    <input
+                      value={tournamentForm.qualifyPerGroup}
+                      onChange={(event) => setTournamentForm({ ...tournamentForm, qualifyPerGroup: event.target.value })}
+                      placeholder="每组晋级"
+                    />
+                  </>
+                )}
+                <label className="checkLine">
                   <input
-                    value={tournamentForm.groupCount}
-                    onChange={(event) => setTournamentForm({ ...tournamentForm, groupCount: event.target.value })}
-                    placeholder="小组数量"
+                    type="checkbox"
+                    checked={tournamentForm.eloEnabled}
+                    onChange={(event) => setTournamentForm({ ...tournamentForm, eloEnabled: event.target.checked })}
                   />
+                  Elo
+                </label>
+                <label className="checkLine">
                   <input
-                    value={tournamentForm.qualifyPerGroup}
-                    onChange={(event) => setTournamentForm({ ...tournamentForm, qualifyPerGroup: event.target.value })}
-                    placeholder="每组晋级"
+                    type="checkbox"
+                    checked={tournamentForm.wccEnabled}
+                    onChange={(event) => setTournamentForm({ ...tournamentForm, wccEnabled: event.target.checked })}
                   />
-                </>
+                  WCC
+                </label>
+                <button className="primary" onClick={createTournament} disabled={!selectedProjectId || !user}>
+                  <Plus size={16} /> 创建赛事
+                </button>
+              </div>
+            </details>
+            <div className="commandPanel">
+              <label>
+                当前赛事
+                <select value={selectedTournamentId} onChange={(event) => setSelectedTournamentId(event.target.value)}>
+                  <option value="">请选择赛事</option>
+                  {tournaments.map((tournament) => (
+                    <option key={tournament.id} value={tournament.id}>
+                      {tournament.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedTournament && (
+                <div className="summaryStrip">
+                  <strong>{formatLabel(selectedTournament.format)}</strong>
+                  <span>{selectedTournament.status}</span>
+                  <span>{selectedTournament.participants?.length ?? 0} 名选手</span>
+                  <span>{selectedTournament.matches?.length ?? 0} 场对阵</span>
+                </div>
               )}
-              <label className="checkLine">
-                <input
-                  type="checkbox"
-                  checked={tournamentForm.eloEnabled}
-                  onChange={(event) => setTournamentForm({ ...tournamentForm, eloEnabled: event.target.checked })}
-                />
-                Elo
-              </label>
-              <label className="checkLine">
-                <input
-                  type="checkbox"
-                  checked={tournamentForm.wccEnabled}
-                  onChange={(event) => setTournamentForm({ ...tournamentForm, wccEnabled: event.target.checked })}
-                />
-                WCC
-              </label>
             </div>
-            <select value={selectedTournamentId} onChange={(event) => setSelectedTournamentId(event.target.value)}>
-              <option value="">请选择赛事</option>
-              {tournaments.map((tournament) => (
-                <option key={tournament.id} value={tournament.id}>
-                  {tournament.name}
-                </option>
-              ))}
-            </select>
+            {tournaments.length === 0 && <div className="emptyState">还没有赛事。展开“创建赛事”后选择赛制，保存后就可以添加参赛名单。</div>}
             {selectedTournament && (
               <div className="opsStack">
-                <div className="formGrid tournamentSettingsGrid">
+                <div className="tournamentOps">
+                  <button onClick={drawTournament} disabled={!user}>自动抽签</button>
+                  <button onClick={generateNextRound} disabled={!user}>下一轮</button>
+                  <button onClick={generateKnockoutStage} disabled={!user}>淘汰阶段</button>
+                  <button onClick={completeTournament} disabled={!user || !canCompleteTournament(selectedTournament)}>完成赛事</button>
+                </div>
+                <details className="formDrawer compactDrawer">
+                  <summary>赛事设置</summary>
+                  <div className="formGrid tournamentSettingsGrid">
                   <input
                     value={tournamentEditForm.name}
                     onChange={(event) => setTournamentEditForm({ ...tournamentEditForm, name: event.target.value })}
@@ -1272,15 +1331,26 @@ export function App() {
                   </label>
                   <button onClick={updateTournamentSettings} disabled={!user || !tournamentEditForm.name.trim()}>保存</button>
                   <button onClick={cancelTournament} disabled={!user || selectedTournament.status === "COMPLETED"}>取消</button>
-                </div>
-                <div className="tournamentOps">
-                  <button onClick={addAllPlayersToTournament} disabled={!user}>同步选手</button>
-                  <button onClick={drawTournament} disabled={!user}>自动抽签</button>
-                  <button onClick={generateNextRound} disabled={!user}>下一轮</button>
-                  <button onClick={generateKnockoutStage} disabled={!user}>淘汰阶段</button>
-                  <button onClick={completeTournament} disabled={!user || !canCompleteTournament(selectedTournament)}>完成赛事</button>
+                  </div>
+                </details>
+                <div className="participantAddBar">
+                  <select
+                    value={participantAddPlayerId}
+                    onChange={(event) => setParticipantAddPlayerId(event.target.value)}
+                    disabled={!canEditTournamentParticipants || availableTournamentPlayers.length === 0}
+                  >
+                    <option value="">选择选手加入赛事</option>
+                    {availableTournamentPlayers.map((player) => (
+                      <option key={player.id} value={player.id}>
+                        {player.displayName}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={addPlayerToTournament} disabled={!canEditTournamentParticipants || !participantAddPlayerId}>添加选手</button>
+                  <button onClick={addAllPlayersToTournament} disabled={!canEditTournamentParticipants}>同步全部</button>
                 </div>
                 <div className="participantList">
+                  {(selectedTournament.participants ?? []).length === 0 && <div className="emptyState">还没有参赛选手。可以单独添加，也可以同步当前项目全部选手。</div>}
                   {(selectedTournament.participants ?? []).map((participant) => (
                     <div className="participantRow" key={participant.id}>
                       <strong>{participant.projectPlayer.displayName}</strong>
@@ -1322,37 +1392,44 @@ export function App() {
         <section className="panel page page--wcc">
           <div className="panelHeader">
             <h2>WCC 规则</h2>
-            <button onClick={createWccRule} disabled={!selectedProjectId || !user || !wccRuleForm.name.trim()}>
-              <Plus size={16} /> 保存
-            </button>
+            <span>{wccRules.length} 套规则</span>
           </div>
-          <div className="formGrid">
-            <input value={wccRuleForm.name} onChange={(event) => setWccRuleForm({ ...wccRuleForm, name: event.target.value })} placeholder="规则名称" />
-            <input value={wccRuleForm.champion} onChange={(event) => setWccRuleForm({ ...wccRuleForm, champion: event.target.value })} placeholder="冠军" />
-            <input value={wccRuleForm.finalist} onChange={(event) => setWccRuleForm({ ...wccRuleForm, finalist: event.target.value })} placeholder="亚军" />
-            <input value={wccRuleForm.semifinal} onChange={(event) => setWccRuleForm({ ...wccRuleForm, semifinal: event.target.value })} placeholder="四强" />
-            <input
-              value={wccRuleForm.quarterfinal}
-              onChange={(event) => setWccRuleForm({ ...wccRuleForm, quarterfinal: event.target.value })}
-              placeholder="八强"
-            />
-            <select value={wccRuleForm.decayType} onChange={(event) => setWccRuleForm({ ...wccRuleForm, decayType: event.target.value })}>
-              <option value="FIXED_EXPIRY">固定过期</option>
-              <option value="LINEAR">线性削减</option>
-              <option value="STEP">阶梯削减</option>
-            </select>
-            {wccRuleForm.decayType === "STEP" ? (
-              <input value={wccRuleForm.steps} onChange={(event) => setWccRuleForm({ ...wccRuleForm, steps: event.target.value })} placeholder="0:1,365:0.5,730:0" />
-            ) : wccRuleForm.decayType === "LINEAR" ? (
-              <>
-                <input value={wccRuleForm.fullDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, fullDays: event.target.value })} placeholder="满额天数" />
-                <input value={wccRuleForm.validDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, validDays: event.target.value })} placeholder="归零天数" />
-              </>
-            ) : (
-              <input value={wccRuleForm.validDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, validDays: event.target.value })} placeholder="有效天数" />
-            )}
-          </div>
+          <details className="formDrawer" open={Boolean(editingWccRuleId)}>
+            <summary>{editingWccRuleId ? "编辑 WCC 规则" : "新增 WCC 规则"}</summary>
+            <div className="formGrid">
+              <input value={wccRuleForm.name} onChange={(event) => setWccRuleForm({ ...wccRuleForm, name: event.target.value })} placeholder="规则名称" />
+              <input value={wccRuleForm.level} onChange={(event) => setWccRuleForm({ ...wccRuleForm, level: event.target.value })} placeholder="规则等级，如 WCC_100" />
+              <input value={wccRuleForm.champion} onChange={(event) => setWccRuleForm({ ...wccRuleForm, champion: event.target.value })} placeholder="冠军" />
+              <input value={wccRuleForm.finalist} onChange={(event) => setWccRuleForm({ ...wccRuleForm, finalist: event.target.value })} placeholder="亚军" />
+              <input value={wccRuleForm.semifinal} onChange={(event) => setWccRuleForm({ ...wccRuleForm, semifinal: event.target.value })} placeholder="四强" />
+              <input
+                value={wccRuleForm.quarterfinal}
+                onChange={(event) => setWccRuleForm({ ...wccRuleForm, quarterfinal: event.target.value })}
+                placeholder="八强"
+              />
+              <select value={wccRuleForm.decayType} onChange={(event) => setWccRuleForm({ ...wccRuleForm, decayType: event.target.value })}>
+                <option value="FIXED_EXPIRY">固定过期</option>
+                <option value="LINEAR">线性削减</option>
+                <option value="STEP">阶梯削减</option>
+              </select>
+              {wccRuleForm.decayType === "STEP" ? (
+                <input value={wccRuleForm.steps} onChange={(event) => setWccRuleForm({ ...wccRuleForm, steps: event.target.value })} placeholder="0:1,365:0.5,730:0" />
+              ) : wccRuleForm.decayType === "LINEAR" ? (
+                <>
+                  <input value={wccRuleForm.fullDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, fullDays: event.target.value })} placeholder="满额天数" />
+                  <input value={wccRuleForm.validDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, validDays: event.target.value })} placeholder="归零天数" />
+                </>
+              ) : (
+                <input value={wccRuleForm.validDays} onChange={(event) => setWccRuleForm({ ...wccRuleForm, validDays: event.target.value })} placeholder="有效天数" />
+              )}
+              <button className="primary" onClick={createWccRule} disabled={!selectedProjectId || !user || !wccRuleForm.name.trim()}>
+                <Plus size={16} /> 保存规则
+              </button>
+              {editingWccRuleId && <button onClick={() => setEditingWccRuleId("")}>取消编辑</button>}
+            </div>
+          </details>
           <div className="table">
+            {wccRules.length === 0 && <div className="emptyState">还没有 WCC 规则。新建规则后，赛事完成时会按名次发放积分。</div>}
             {wccRules.map((rule) => (
               <div className="ruleRow" key={rule.id}>
                 <strong>{rule.name}</strong>
@@ -1384,10 +1461,13 @@ export function App() {
                 </a>
               </div>
             </div>
-            <textarea value={importCsv} onChange={(event) => setImportCsv(event.target.value)} />
-            <button onClick={importPlayers} disabled={!selectedProjectId || !user}>
-              导入选手
-            </button>
+            <details className="formDrawer">
+              <summary>批量导入选手 CSV</summary>
+              <textarea value={importCsv} onChange={(event) => setImportCsv(event.target.value)} />
+              <button className="primary" onClick={importPlayers} disabled={!selectedProjectId || !user}>
+                导入选手
+              </button>
+            </details>
           </section>
 
           <section className="panel page page--backups">
@@ -1396,6 +1476,7 @@ export function App() {
               <button onClick={createBackup} disabled={!user}>创建备份</button>
             </div>
             <div className="table">
+              {backups.length === 0 && <div className="emptyState">还没有备份。创建备份后可以下载或恢复。</div>}
               {backups.slice(0, 5).map((backup) => (
                 <div className="backupRow" key={backup.id}>
                   <strong>{backup.fileName}</strong>
@@ -1430,6 +1511,9 @@ export function App() {
             </div>
           </div>
           <div className="matches">
+            {(selectedTournament?.matches ?? []).length === 0 && (
+              <div className="emptyState">{selectedTournament ? "还没有对阵。请先在赛事页添加参赛名单并自动抽签。" : "请先选择一个赛事。"}</div>
+            )}
             {(selectedTournament?.matches ?? []).map((match) => (
               <div className="match" key={match.id}>
                 <span>{match.round?.name ?? match.bracketNodeKey ?? "对局"}</span>
@@ -1543,6 +1627,7 @@ export function App() {
             <span>{standings.length} 人</span>
           </div>
           <div className="table">
+            {standings.length === 0 && <div className="emptyState">还没有成绩。完成抽签并录入赛果后会生成成绩表。</div>}
             {standings.map((row) => (
               <div className="standingRow" key={row.participantId}>
                 <span>{row.rank}</span>
@@ -1597,6 +1682,7 @@ export function App() {
               <span>{combinedRankings.length} 人</span>
             </div>
             <div className="table">
+              {combinedRankings.length === 0 && <div className="emptyState">还没有排名数据。添加选手并完成赛事后会产生综合排名。</div>}
               {combinedRankings.slice(0, 10).map((player) => (
                 <div className="rankingRow" key={player.id}>
                   <span>{player.rank}</span>
@@ -1614,6 +1700,7 @@ export function App() {
               <span>{eloRankings.length} 人</span>
             </div>
             <div className="table">
+              {eloRankings.length === 0 && <div className="emptyState">还没有 Elo 排名数据。</div>}
               {eloRankings.slice(0, 10).map((player) => (
                 <div className="rankingRow" key={player.id}>
                   <span>{player.rank}</span>
@@ -1631,6 +1718,7 @@ export function App() {
               <span>{wccRankings.length} 人</span>
             </div>
             <div className="table">
+              {wccRankings.length === 0 && <div className="emptyState">还没有 WCC 排名数据。</div>}
               {wccRankings.slice(0, 10).map((player) => (
                 <div className="rankingRow" key={player.id}>
                   <span>{player.rank}</span>

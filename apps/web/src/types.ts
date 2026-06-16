@@ -26,6 +26,7 @@ export interface ProjectPlayer {
   wins: number;
   draws: number;
   losses: number;
+  active?: boolean;
   player?: {
     name: string;
     nickname?: string;
@@ -133,6 +134,7 @@ export type MatchResultType =
 
 export interface TournamentParticipant {
   id: string;
+  projectPlayerId: string;
   seed?: number;
   checkedIn?: boolean;
   registrationStatus?: "REGISTERED" | "CHECKED_IN" | "WITHDRAWN";

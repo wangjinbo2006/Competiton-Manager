@@ -32,7 +32,7 @@ button {
   justify-content: center;
   gap: 8px;
   border: 1px solid #c8d0ca;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #ffffff;
   color: #172026;
   cursor: pointer;
@@ -45,7 +45,7 @@ a.buttonLink {
   align-items: center;
   justify-content: center;
   border: 1px solid #c8d0ca;
-  border-radius: 8px;
+  border-radius: 6px;
   color: #172026;
   padding: 0 12px;
   text-decoration: none;
@@ -76,7 +76,7 @@ input {
   width: 100%;
   min-height: 38px;
   border: 1px solid #c8d0ca;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #ffffff;
   padding: 0 10px;
 }
@@ -90,23 +90,23 @@ textarea {
   min-height: 120px;
   resize: vertical;
   border: 1px solid #c8d0ca;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px;
 }
 
 .shell {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   border-right: 1px solid #dfe4df;
-  background: #eef2f1;
-  padding: 24px;
+  background: #f0f3f2;
+  padding: 18px;
   overflow-y: auto;
 }
 
@@ -145,15 +145,15 @@ textarea {
 
 .navList {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .navButton {
   justify-content: flex-start;
-  min-height: 54px;
+  min-height: 44px;
   border-color: transparent;
   background: transparent;
-  padding: 8px 10px;
+  padding: 8px;
   text-align: left;
 }
 
@@ -165,7 +165,7 @@ textarea {
 
 .navButton small {
   color: #66736c;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
 .navButton.active {
@@ -215,8 +215,10 @@ textarea {
 .content {
   display: grid;
   align-content: start;
-  gap: 20px;
-  padding: 28px;
+  gap: 16px;
+  width: 100%;
+  max-width: 1440px;
+  padding: 24px;
 }
 
 .topbar {
@@ -224,6 +226,8 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  border-bottom: 1px solid #dfe4df;
+  padding-bottom: 16px;
 }
 
 .topbar p {
@@ -245,7 +249,7 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+  font-size: 1.85rem;
 }
 
 h2 {
@@ -303,7 +307,7 @@ h2 {
   grid-template-columns: auto 1fr;
   gap: 4px 10px;
   border: 1px solid #dfe4df;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #ffffff;
   padding: 16px;
 }
@@ -323,17 +327,17 @@ h2 {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
 }
 
 .panel {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   border: 1px solid #dfe4df;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #ffffff;
-  padding: 18px;
+  padding: 16px;
 }
 
 .panelHeader {
@@ -341,6 +345,89 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 38px;
+}
+
+.panelHeader > span {
+  color: #66736c;
+  font-size: 0.88rem;
+}
+
+.formDrawer {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #dfe4df;
+  border-radius: 6px;
+  background: #fafbf9;
+  padding: 10px;
+}
+
+.formDrawer summary {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #24322b;
+  font-weight: 700;
+}
+
+.formDrawer > * + * {
+  margin-top: 10px;
+}
+
+.compactDrawer {
+  background: #ffffff;
+}
+
+.commandPanel {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  border: 1px solid #edf0ea;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.commandPanel label {
+  display: grid;
+  gap: 6px;
+  color: #425047;
+  font-size: 0.88rem;
+}
+
+.summaryStrip {
+  display: flex;
+  min-height: 38px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.summaryStrip strong,
+.summaryStrip span {
+  border: 1px solid #dfe4df;
+  border-radius: 999px;
+  background: #f7f8fb;
+  padding: 6px 10px;
+  color: #425047;
+  font-size: 0.86rem;
+}
+
+.summaryStrip strong {
+  border-color: #bdd3d0;
+  background: #edf7f5;
+  color: #245b5f;
+}
+
+.emptyState {
+  border: 1px dashed #c8d0ca;
+  border-radius: 6px;
+  background: #fafbf9;
+  color: #66736c;
+  padding: 16px;
 }
 
 .actions,
@@ -378,7 +465,17 @@ h2 {
 
 .opsStack {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.participantAddBar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #edf0ea;
+  border-radius: 6px;
+  padding: 10px;
 }
 
 .participantList {
@@ -392,7 +489,7 @@ h2 {
   gap: 8px;
   align-items: center;
   border: 1px solid #dfe4df;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 8px;
 }
 
@@ -403,7 +500,7 @@ h2 {
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
   gap: 8px;
 }
 
@@ -432,7 +529,7 @@ h2 {
   align-items: center;
   gap: 10px;
   border: 1px solid #edf0ea;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px 12px;
 }
 
@@ -447,7 +544,7 @@ h2 {
   gap: 6px 12px;
   color: #66736c;
   font-size: 0.86rem;
-  padding: 0 12px 4px 58px;
+  padding: 0 12px 6px 58px;
 }
 
 .playerMeta span {
@@ -459,7 +556,7 @@ h2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   border: 1px solid #edf0ea;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px 12px;
 }
 
@@ -495,7 +592,7 @@ h2 {
 
 .playerEditRow {
   border: 1px solid #edf0ea;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px;
 }
 
@@ -511,7 +608,7 @@ h2 {
   display: grid;
   min-width: 620px;
   border: 1px solid #edf0ea;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .crosstableCorner,
@@ -590,7 +687,7 @@ h2 {
   display: grid;
   gap: 6px;
   border: 1px solid #edf0ea;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px;
   background: #ffffff;
 }
@@ -648,8 +745,14 @@ h2 {
   .grid,
   .metrics,
   .formGrid,
-  .dashboardGrid {
+  .dashboardGrid,
+  .commandPanel,
+  .participantAddBar {
     grid-template-columns: 1fr;
+  }
+
+  .content {
+    padding: 18px;
   }
 
   .sidebar {
@@ -682,6 +785,15 @@ h2 {
   .participantRow,
   .ruleRow {
     grid-template-columns: 1fr;
+  }
+
+  .summaryStrip {
+    min-width: 0;
+  }
+
+  .summaryStrip strong,
+  .summaryStrip span {
+    max-width: 100%;
   }
 
   .playerMeta {
